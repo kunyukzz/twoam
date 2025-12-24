@@ -23,7 +23,7 @@ int main(void)
     AM_SET_TARGET_DIRS("bin", "build/engine");
     AM_ADD_INCLUDE("engine/src");
     AM_SET_SOURCE_ALL("engine/src");
-    AM_USE_LIB("X11");
+    AM_USE_LIB("X11, xcb, X11-xcb, xkbcommon");
     AM_SET_TARGET_NAME("twoam");
 
     AM_BUILD(BUILD_SHARED, true);
