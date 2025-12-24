@@ -1,7 +1,5 @@
 #include "define.h"
-
-#include <stdio.h>
-#include <stdarg.h>
+#include "fmt.h"
 
 #define MSG_BUFFER 4096
 #define FINAL_BUFFER 4096
@@ -30,7 +28,7 @@ static void log_console(const char *msg, u8 color)
         MAGENTA // TRACE
     };
 
-    printf("\033[%s%s\033[0m", color_string[color], msg);
+    pfmt("\033[%s%s\033[0m", color_string[color], msg);
 }
 
 void log_msg(log_level_t level, const char *msg, ...)
@@ -40,11 +38,11 @@ void log_msg(log_level_t level, const char *msg, ...)
 
     va_list p_arg;
     va_start(p_arg, msg);
-    vsnprintf(msg_buffer, sizeof(msg_buffer), msg, p_arg);
+    vsnpfmt(msg_buffer, sizeof(msg_buffer), msg, p_arg);
     va_end(p_arg);
 
-    snprintf(final_buffer, sizeof(final_buffer), "%s %s\n", lvl_str[level],
-             msg_buffer);
+    snpfmt(final_buffer, sizeof(final_buffer), "%s %s\n", lvl_str[level],
+           msg_buffer);
 
     log_console(final_buffer, (u8)level);
 }
