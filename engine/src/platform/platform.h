@@ -18,4 +18,16 @@ f64 platform_get_time(void);
 
 void platform_sleep(u64 ms);
 
+void *platform_alloc(u64 size, b8 aligned);
+
+void platform_free(void *block, b8 aligned);
+
+void *platform_memzero(void *block, u64 size);
+
+void *platform_memcopy(void *dest, const void *src, u64 size);
+
+void *platform_memmove(void *dest, const void *src, u64 size);
+
+void *platform_memsets(void *dest, i32 value, u64 size);
+
 #endif // PLATFORM_H

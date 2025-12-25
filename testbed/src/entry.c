@@ -1,5 +1,4 @@
 #include "game.h"
-#include <stdlib.h>
 
 b8 game_set(game_entry_t *out)
 {
@@ -12,7 +11,7 @@ b8 game_set(game_entry_t *out)
     out->render = game_render;
     out->resize = game_resize;
 
-    out->game_state = malloc(sizeof(game_t));
+    out->game_state = mem_alloc(sizeof(game_t), MEM_GAME);
 
     return true;
 }

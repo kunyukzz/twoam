@@ -1,6 +1,7 @@
 #include "application.h"
+#include "memory.h"
 
-#include <stdlib.h>
+#include "container/test_darray.h"
 
 static b8 initialized = false;
 static application_t g_app = {0};
@@ -12,6 +13,8 @@ b8 application_init(game_entry_t *game_instance)
         LOGE("Application already running");
         return false;
     }
+
+    memory_sys_init(MEBIBYTE);
 
     g_app.game = game_instance;
 
@@ -34,12 +37,16 @@ b8 application_init(game_entry_t *game_instance)
 
     initialized = true;
 
+    // dynamic_array_test();
+
     LOGI("Engine Initialized");
     return true;
 }
 
 b8 application_run(void)
 {
+    LOGI(get_usage_mem());
+
     while (g_app.is_running)
     {
         if (!platform_pump(&g_app.platform))
@@ -69,7 +76,10 @@ b8 application_run(void)
 
     platform_kill(&g_app.platform);
 
-    free(g_app.game->game_state);
+    // free memory from game side
+    platform_free(g_app.game->game_state, false);
+
+    memory_sys_kill();
 
     LOGI("Engine Shutdown");
     return true;

@@ -208,4 +208,36 @@ void platform_sleep(u64 ms)
     nanosleep(&ts, 0);
 }
 
+void *platform_alloc(u64 size, b8 aligned)
+{
+    (void)aligned;
+    return malloc(size);
+}
+
+void platform_free(void *block, b8 aligned)
+{
+    (void)aligned;
+    free(block);
+}
+
+void *platform_memzero(void *block, u64 size)
+{
+    return memset(block, 0, size);
+}
+
+void *platform_memcopy(void *dest, const void *src, u64 size)
+{
+    return memcpy(dest, src, size);
+}
+
+void *platform_memmove(void *dest, const void *src, u64 size)
+{
+    return memmove(dest, src, size);
+}
+
+void *platform_memsets(void *dest, i32 value, u64 size)
+{
+    return memset(dest, value, size);
+}
+
 #endif

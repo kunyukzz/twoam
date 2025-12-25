@@ -63,6 +63,11 @@ typedef double f64;
 typedef _Bool b8;
 typedef u64 uptr;
 
+#define KIBIBYTE (1024ULL)
+#define MEBIBYTE (1024ULL * KIBIBYTE)
+#define GIBIBYTE (1024ULL * MEBIBYTE)
+#define TEBIBYTE (1024ULL * GIBIBYTE)
+
 STATIC_ASSERT(sizeof(uptr) == 8, uptr_must_be_64bit);
 STATIC_ASSERT(sizeof(void *) == 8, pointers_must_be_64bit);
 
