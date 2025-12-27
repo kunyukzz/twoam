@@ -15,3 +15,5 @@ b8 game_set(game_entry_t *out)
 
     return true;
 }
+
+int main(void) { return 0; }

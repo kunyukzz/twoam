@@ -25,6 +25,7 @@ b8 application_init(game_entry_t *game_instance)
                        (i16)game_instance->config.width,
                        (i16)game_instance->config.height))
     {
+        LOGF("Platform failed to initialized");
         return false;
     }
 

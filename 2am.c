@@ -7,19 +7,23 @@
 #define TWO_AM_BUILD_IMPL
 #include "2am-builder.h"
 
+static void compiler_config(void)
+{
+    AM_SET_COMPILER("clang", "c99");
+    AM_SET_COMPILER_WARN("-Wall, -Wextra, -Wpedantic, -Werror, "
+                         "-Wconversion, -Wsign-conversion, "
+                         "-Wshadow, -Wstrict-prototypes, "
+                         "-Wmissing-prototypes, -Wunused-parameter");
+}
+
 int main(void)
 {
     AM_INIT();
 
     // engine compile setup
-    AM_SET_COMPILER("clang", "c99");
+    compiler_config();
 
-    AM_SET_COMPILER_WARN("-Wall, -Wextra, -Wpedantic, -Werror, "
-                         "-Wconversion, -Wsign-conversion, "
-                         "-Wshadow, -Wstrict-prototypes, "
-                         "-Wmissing-prototypes, -Wunused-parameter");
-
-    AM_SET_FLAGS("-g, -fPIC, -DAM2_DEBUG, -DAM2_CORE");
+    AM_SET_FLAGS("-g, -fPIC, -DAM2_DEBUG, -DAM2_CORE, -fvisibility=hidden");
     AM_SET_TARGET_DIRS("bin", "build/engine");
     AM_ADD_INCLUDE("engine/src");
     AM_SET_SOURCE_ALL("engine/src");
@@ -32,12 +36,7 @@ int main(void)
     AM_RESET();
 
     // testbed compile setup
-    AM_SET_COMPILER("clang", "c99");
-
-    AM_SET_COMPILER_WARN("-Wall, -Wextra, -Wpedantic, -Werror, "
-                         "-Wconversion, -Wsign-conversion, "
-                         "-Wshadow, -Wstrict-prototypes, "
-                         "-Wmissing-prototypes, -Wunused-parameter");
+    compiler_config();
 
     AM_SET_FLAGS("-g");
     AM_SET_TARGET_DIRS("bin", "build/testbed");
@@ -50,6 +49,10 @@ int main(void)
     AM_BUILD(BUILD_EXE, false);
 
     AM_RESET();
+
+    /*
+    AM_PREBUILT_TO_SYSTEM(false, "bin/libtwoam", "engine/src/twoam.h", true);
+    */
 
     return 0;
 }
