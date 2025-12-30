@@ -13,7 +13,17 @@ static void compiler_config(void)
     AM_SET_COMPILER_WARN("-Wall, -Wextra, -Wpedantic, -Werror, "
                          "-Wconversion, -Wsign-conversion, "
                          "-Wshadow, -Wstrict-prototypes, "
-                         "-Wmissing-prototypes, -Wunused-parameter");
+                         "-Wunused-parameter");
+
+    AM_ADD_INCLUDE("engine/src");
+}
+
+static void source_files(const char *source_dir, const char *build_dir,
+                         const char *target)
+{
+    AM_SET_TARGET_DIRS("bin", build_dir);
+    AM_SET_SOURCE_ALL(source_dir);
+    AM_SET_TARGET_NAME(target);
 }
 
 int main(void)
@@ -22,13 +32,10 @@ int main(void)
 
     // engine compile setup
     compiler_config();
+    source_files("engine/src", "build/engine", "twoam");
 
     AM_SET_FLAGS("-g, -fPIC, -DAM2_DEBUG, -DAM2_CORE, -fvisibility=hidden");
-    AM_SET_TARGET_DIRS("bin", "build/engine");
-    AM_ADD_INCLUDE("engine/src");
-    AM_SET_SOURCE_ALL("engine/src");
     AM_USE_LIB("X11, xcb, X11-xcb, xkbcommon");
-    AM_SET_TARGET_NAME("twoam");
 
     AM_BUILD(BUILD_SHARED, true);
     AM_GEN_DATABASE();
@@ -37,22 +44,15 @@ int main(void)
 
     // testbed compile setup
     compiler_config();
+    source_files("testbed/src", "build/testbed", "testbed");
 
     AM_SET_FLAGS("-g");
-    AM_SET_TARGET_DIRS("bin", "build/testbed");
-    AM_ADD_INCLUDE("engine/src");
-    AM_SET_SOURCE_ALL("testbed/src");
-    AM_SET_TARGET_NAME("testbed");
-
     AM_USE_PREBUILT_LIB("twoam", "bin");
     AM_ADD_LINKER_FLAGS("-Wl, -rpath, .");
+
     AM_BUILD(BUILD_EXE, false);
 
     AM_RESET();
-
-    /*
-    AM_PREBUILT_TO_SYSTEM(false, "bin/libtwoam", "engine/src/twoam.h", true);
-    */
 
     return 0;
 }
