@@ -1,10 +1,14 @@
 #include "platform.h"
 
 #if PLATFORM_LINUX
+#    include "core/event.h"
+#    include "core/input.h"
 
 #    include <xcb/xcb.h> // xcb_connection_t, xcb_window_t, xcb_screen_t, xcb_atom_t
 #    include <X11/Xlib.h>     // Display, XOpenDisplay
 #    include <X11/Xlib-xcb.h> // XGetXCBConnection
+#    include <X11/XKBlib.h>
+#    include <X11/keysym.h>
 #    include <sys/time.h>
 
 #    include <stdlib.h>
@@ -18,6 +22,8 @@ typedef struct {
     xcb_atom_t wm_proto;
     xcb_atom_t wm_delete;
 } linux_system_t;
+
+static keys translate_keycode(u32 keycode);
 
 b8 platform_init(platform_system_t *ps, const char *name, i32 width,
                  i32 height)
@@ -151,26 +157,61 @@ b8 platform_pump(platform_system_t *ps)
         case XCB_KEY_PRESS:
         case XCB_KEY_RELEASE:
         {
-            // TODO: implement key press & release
+            xcb_key_press_event_t *kbd_ev = (xcb_key_press_event_t *)event;
+            b8 pressed = event->response_type == XCB_KEY_PRESS;
+            xcb_keycode_t code = kbd_ev->detail;
+            KeySym key_sym = XkbKeycodeToKeysym(linux->display, code, 0, 0);
+
+            keys key = translate_keycode((u32)key_sym);
+            input_process_key(key, pressed);
+
+            u8 mods = 0;
+            if (kbd_ev->state & XCB_MOD_MASK_SHIFT) mods |= MOD_SHIFT;
+            if (kbd_ev->state & XCB_MOD_MASK_CONTROL) mods |= MOD_CTRL;
+            if (kbd_ev->state & XCB_MOD_MASK_1) mods |= MOD_ALT;
+            if (kbd_ev->state & XCB_MOD_MASK_4) mods |= MOD_SUPER;
+            if (kbd_ev->state & XCB_MOD_MASK_LOCK) mods |= MOD_CAPS;
+
+            input_process_mods(mods);
         }
         break;
 
         case XCB_BUTTON_PRESS:
         case XCB_BUTTON_RELEASE:
         {
-            // TODO: implement button press & release
+            xcb_button_press_event_t *m_ev = (xcb_button_press_event_t *)event;
+            b8 pressed = m_ev->response_type == XCB_BUTTON_PRESS;
+            mouse_buttons mouse_button = MB_COUNT;
+            switch (m_ev->detail)
+            {
+            case XCB_BUTTON_INDEX_1: mouse_button = MB_LEFT; break;
+            case XCB_BUTTON_INDEX_2: mouse_button = MB_MIDDLE; break;
+            case XCB_BUTTON_INDEX_3: mouse_button = MB_RIGHT; break;
+            }
+
+            if (mouse_button != MB_COUNT)
+                input_process_mouse_button(mouse_button, pressed);
         }
         break;
 
         case XCB_MOTION_NOTIFY:
         {
-            // TODO: implement mouse cursor
+            xcb_motion_notify_event_t *move_ev =
+                (xcb_motion_notify_event_t *)event;
+            input_process_mouse_move(move_ev->event_x, move_ev->event_y);
         }
         break;
 
         case XCB_CONFIGURE_NOTIFY:
         {
-            // TODO: implement
+            xcb_configure_notify_event_t *cfg_ev =
+                (xcb_configure_notify_event_t *)event;
+
+            event_ctx_t c;
+            c.data.u16[0] = cfg_ev->width;
+            c.data.u16[1] = cfg_ev->height;
+
+            event_emit(EV_RESIZED, 0, c);
         }
         break;
 
@@ -180,8 +221,11 @@ b8 platform_pump(platform_system_t *ps)
 
             if (cm->data.data32[0] == linux->wm_delete)
             {
-                LOGD("WM_DELETE_WINDOW received - quitting");
                 quit = true;
+
+                event_ctx_t c;
+                c.data.u8[0] = (u8)cm->window;
+                event_emit(EV_APP_QUIT, 0, c);
             }
         }
         break;
@@ -238,6 +282,178 @@ void *platform_memmove(void *dest, const void *src, u64 size)
 void *platform_memsets(void *dest, i32 value, u64 size)
 {
     return memset(dest, value, size);
+}
+
+keys translate_keycode(u32 keycode)
+{
+    switch (keycode)
+    {
+    // letters
+    case XK_a:
+    case XK_A: return KEY_A;
+    case XK_b:
+    case XK_B: return KEY_B;
+    case XK_c:
+    case XK_C: return KEY_C;
+    case XK_d:
+    case XK_D: return KEY_D;
+    case XK_e:
+    case XK_E: return KEY_E;
+    case XK_f:
+    case XK_F: return KEY_F;
+    case XK_g:
+    case XK_G: return KEY_G;
+    case XK_h:
+    case XK_H: return KEY_H;
+    case XK_i:
+    case XK_I: return KEY_I;
+    case XK_j:
+    case XK_J: return KEY_J;
+    case XK_k:
+    case XK_K: return KEY_K;
+    case XK_l:
+    case XK_L: return KEY_L;
+    case XK_m:
+    case XK_M: return KEY_M;
+    case XK_n:
+    case XK_N: return KEY_N;
+    case XK_o:
+    case XK_O: return KEY_O;
+    case XK_p:
+    case XK_P: return KEY_P;
+    case XK_q:
+    case XK_Q: return KEY_Q;
+    case XK_r:
+    case XK_R: return KEY_R;
+    case XK_s:
+    case XK_S: return KEY_S;
+    case XK_t:
+    case XK_T: return KEY_T;
+    case XK_u:
+    case XK_U: return KEY_U;
+    case XK_v:
+    case XK_V: return KEY_V;
+    case XK_w:
+    case XK_W: return KEY_W;
+    case XK_x:
+    case XK_X: return KEY_X;
+    case XK_y:
+    case XK_Y: return KEY_Y;
+    case XK_z:
+    case XK_Z: return KEY_Z;
+
+    // numbers (top row)
+    case XK_0:
+    case XK_parenright: return KEY_0;
+    case XK_1:
+    case XK_exclam: return KEY_1;
+    case XK_2:
+    case XK_at: return KEY_2;
+    case XK_3:
+    case XK_numbersign: return KEY_3;
+    case XK_4:
+    case XK_dollar: return KEY_4;
+    case XK_5:
+    case XK_percent: return KEY_5;
+    case XK_6:
+    case XK_asciicircum: return KEY_6;
+    case XK_7:
+    case XK_ampersand: return KEY_7;
+    case XK_8:
+    case XK_asterisk: return KEY_8;
+    case XK_9:
+    case XK_parenleft: return KEY_9;
+
+    // functions
+    case XK_F1: return KEY_F1;
+    case XK_F2: return KEY_F2;
+    case XK_F3: return KEY_F3;
+    case XK_F4: return KEY_F4;
+    case XK_F5: return KEY_F5;
+    case XK_F6: return KEY_F6;
+    case XK_F7: return KEY_F7;
+    case XK_F8: return KEY_F8;
+    case XK_F9: return KEY_F9;
+    case XK_F10: return KEY_F10;
+    case XK_F11: return KEY_F11;
+    case XK_F12: return KEY_F12;
+
+    // controls
+    case XK_Escape: return KEY_ESCAPE;
+    case XK_Return: return KEY_ENTER;
+    case XK_Tab: return KEY_TAB;
+    case XK_BackSpace: return KEY_BACKSPACE;
+    case XK_space: return KEY_SPACE;
+
+    // modifiers
+    case XK_Shift_L:
+    case XK_Shift_R: return KEY_SHIFT;
+    case XK_Control_L:
+    case XK_Control_R: return KEY_CTRL;
+    case XK_Alt_L:
+    case XK_Alt_R: return KEY_ALT;
+    case XK_Super_L:
+    case XK_Super_R: return KEY_SUPER;
+
+    // arrows
+    case XK_Up: return KEY_UP;
+    case XK_Down: return KEY_DOWN;
+    case XK_Left: return KEY_LEFT;
+    case XK_Right: return KEY_RIGHT;
+
+    // navigations
+    case XK_Insert: return KEY_INSERT;
+    case XK_Delete: return KEY_DELETE;
+    case XK_Home: return KEY_HOME;
+    case XK_End: return KEY_END;
+    case XK_Page_Up: return KEY_PAGE_UP;
+    case XK_Page_Down: return KEY_PAGE_DOWN;
+
+    // numpad
+    case XK_Num_Lock: return KEY_NUM_LOCK;
+    case XK_KP_0: return KEY_KP_0;
+    case XK_KP_1: return KEY_KP_1;
+    case XK_KP_2: return KEY_KP_2;
+    case XK_KP_3: return KEY_KP_3;
+    case XK_KP_4: return KEY_KP_4;
+    case XK_KP_5: return KEY_KP_5;
+    case XK_KP_6: return KEY_KP_6;
+    case XK_KP_7: return KEY_KP_7;
+    case XK_KP_8: return KEY_KP_8;
+    case XK_KP_9: return KEY_KP_9;
+    case XK_KP_Add: return KEY_KP_ADD;
+    case XK_KP_Subtract: return KEY_KP_SUBTRACT;
+    case XK_KP_Multiply: return KEY_KP_MULTIPLY;
+    case XK_KP_Divide: return KEY_KP_DIVIDE;
+    case XK_KP_Enter: return KEY_KP_ENTER;
+    case XK_KP_Decimal: return KEY_KP_DECIMAL;
+
+    // symbols
+    case XK_minus:
+    case XK_underscore: return KEY_MINUS;
+    case XK_equal:
+    case XK_plus: return KEY_EQUALS;
+    case XK_bracketleft:
+    case XK_braceleft: return KEY_LEFT_BRACKET;
+    case XK_bracketright:
+    case XK_braceright: return KEY_RIGHT_BRACKET;
+    case XK_backslash:
+    case XK_bar: return KEY_BACKSLASH;
+    case XK_semicolon:
+    case XK_colon: return KEY_SEMICOLON;
+    case XK_apostrophe:
+    case XK_quotedbl: return KEY_APOSTROPHE;
+    case XK_grave:
+    case XK_asciitilde: return KEY_GRAVE;
+    case XK_comma:
+    case XK_less: return KEY_COMMA;
+    case XK_period:
+    case XK_greater: return KEY_PERIOD;
+    case XK_slash:
+    case XK_question: return KEY_SLASH;
+
+    default: return KEY_UNKNOWN;
+    }
 }
 
 #endif
